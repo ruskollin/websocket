@@ -69,26 +69,10 @@ const ChatRoom = ({ name, goBackHome }) => {
         setInputValue('');
     };
 
-    const handleLogout = () => {
-        const logoutMessage = {
-            type: 'logout',
-            // could include a user ID or username
-        };
-        webSocket.send(JSON.stringify(logoutMessage));
-        goBackHome();
-    };
-
     return (
         <div className="chat-container">
-            <div className="header">
-                <div>
-                    <div style={{ marginBottom: 10 }}>Welcome, {name}!</div>
-                    <div style={{ marginBottom: 10 }}> Users online: {clientCount}</div>
-                </div>
-                <div>
-                    <button type="button" className="buttonStyle2" onClick={handleLogout}>Log out</button>
-                </div>
-            </div>
+            <div style={{ marginBottom: 10 }}>Welcome, {name}!</div>
+            <div style={{ marginBottom: 10 }}> {clientCount} users online... {name}!</div>
             <div className="message-container">
                 {messages.map((message, index) => (
                     // <div
