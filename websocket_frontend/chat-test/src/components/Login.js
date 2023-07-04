@@ -29,7 +29,7 @@ const Login = ({ onNameSubmit }) => {
                     />
                 </div>
                 <div>
-                    <button type="submit" className="buttonStyle">Enter Chat</button>
+                    <button type="submit" className="buttonStyle">Enter Page</button>
                 </div>
             </form>
         </div>

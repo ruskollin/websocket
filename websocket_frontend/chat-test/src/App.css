@@ -32,6 +32,20 @@
   border-radius: 5px;
   cursor: pointer;
   margin-top: 2px;
+  position: relative;
+  width: 200px;
+}
+
+.buttonStyle3 {
+  background-color: rgb(205, 110, 97);
+  color: white;
+  height: 40px;
+  font-weight: bold;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 2px;
 }
 
 .header {
@@ -137,4 +151,16 @@
   border: none;
   border-radius: 20px;
   cursor: pointer;
+}
+
+.notification-badge {
+  position: absolute;
+  top: 7px;
+  right: 4px;
+  background-color: red;
+  color: white;
+  border-radius: 20%;
+  padding: 4px;
+  font-size: 12px;
+  width: 13px;
 }
