@@ -1,19 +1,53 @@
 const WebSocket = require('ws');
+require('dotenv').config()
+var mysql = require('mysql')
+
+var con = mysql.createPool({
+    host: 'localhost',
+    user: 'ruskin',
+    password: process.env.password,
+    database: 'chatdb'
+})
 
 const wss = new WebSocket.Server({ port: 8080 });
 
 const clients = new Set();
 const messages = [];
 
+function checkMessages() {
+    return new Promise((resolve, reject) => {
+        const query = 'SELECT COUNT(*) AS COUNT FROM chat_messages WHERE IS_NEW_MESSAGE_ = 1';
+        con.query(query, (error, results) => {
+            if (error) {
+                console.error('Error executing query:', error);
+                reject(error);
+                return;
+            }
+            resolve(results[0].COUNT);
+        });
+    });
+}
+
+function readMessages() {
+    return new Promise((resolve, reject) => {
+        const query = 'UPDATE chat_messages SET IS_NEW_MESSAGE_ = 0 WHERE IS_NEW_MESSAGE_ = 1';
+        con.query(query, (error, results) => {
+            if (error) {
+                console.error('Error executing query:', error);
+                return;
+            }
+            console.log('Rows updated:', results.affectedRows);
+        });
+    });
+}
+
 wss.on('connection', (ws) => {
     clients.add(ws);
 
     ws.on('message', (message) => {
-        //Counting clients
         clients.add(ws);
         sendClientCount();
 
-        // Convert the received buffer to a string
         const receivedMessage = message.toString();
         console.log(receivedMessage)
 
@@ -28,21 +62,25 @@ wss.on('connection', (ws) => {
         const messageObject = JSON.parse(receivedMessage)
 
         if (messageObject.hasOwnProperty('type')) {
-            // 'type' property exists
             console.log(messageObject)
             if (messageObject.type === 'logout') {
-                //update user count
                 sendClientCount();
+            } else if (messageObject.type === 'noMessages') {
+                console.log('all is read')
+                readMessages()
+                const countMessage = {
+                    type: 'newMessagesCount',
+                    message: 0
+                };
+                const countJson = JSON.stringify(countMessage);
+                ws.send(countJson);
+
             } else {
-                //user authentication
                 console.log('User authenticated.');
             }
-
-
         }
 
         if (messageObject.hasOwnProperty('content')) {
-            // Broadcast the message to all connected clients, including the sender
             messages.push(receivedMessage);
             const chatMessage = {
                 type: 'chatMessage',
@@ -52,6 +90,29 @@ wss.on('connection', (ws) => {
                 client.send(JSON.stringify(chatMessage));
             });
         }
+
+        setInterval(() => {
+            checkMessages()
+                .then((countMessages) => {
+                    const countMessage = {
+                        type: 'newMessagesCount',
+                        message: countMessages
+                    };
+                    const countJson = JSON.stringify(countMessage);
+
+                    if (countMessages > 0) {
+                        console.log('count:', countJson);
+                        clients.forEach((client) => {
+                            client.send(countJson);
+                        });
+                    }
+
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+        }, 1000);
+
     });
 
     ws.on('close', () => {
@@ -63,16 +124,13 @@ wss.on('connection', (ws) => {
 function sendClientCount() {
     const connectedClients = clients.size;
     console.log('Updating user count: ', connectedClients)
-    // Create an object with the client count
     const response = {
         type: 'clientCount',
         count: connectedClients
     };
 
-    // Convert the object to JSON string
     const responseJson = JSON.stringify(response);
 
-    // Broadcast the client count to all connected clients
     clients.forEach((client) => {
         client.send(responseJson);
     });
